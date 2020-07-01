@@ -29,6 +29,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+	
 // Set the key - must be called first
 Boolean APSetKey(CFStringRef key);
 
