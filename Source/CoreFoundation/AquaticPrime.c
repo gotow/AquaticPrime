@@ -99,7 +99,7 @@ Boolean APSetKey(CFStringRef key)
     CFRelease(keyData);
     
     if (oserr != noErr) {
-        CFStringRef errorString = CFStringCreateWithFormat(kCFAllocatorDefault, NULL, CFSTR("Unable to import key. Error %d"), oserr);
+        CFStringRef errorString = CFStringCreateWithFormat(kCFAllocatorDefault, NULL, CFSTR("Unable to import key. Error %d"), (int)oserr);
         CFShow(errorString);
         CFRelease(errorString);
         return FALSE;
@@ -247,7 +247,7 @@ CFDataRef APCreateHashFromDictionary(CFDictionaryRef dict)
     // Build the data
     CFMutableDataRef dictData = CFDataCreateMutable(kCFAllocatorDefault, 0);
     long keyCount = CFArrayGetCount(keyArray);
-    for (int keyIndex = 0; keyIndex < keyCount; keyIndex++)
+    for (long keyIndex = 0; keyIndex < keyCount; keyIndex++)
     {
         CFStringRef key = CFArrayGetValueAtIndex(keyArray, keyIndex);
         CFStringRef value = CFDictionaryGetValue(dict, key);
@@ -358,28 +358,11 @@ CFDictionaryRef APCreateDictionaryForLicenseData(CFDataRef data)
     
     
     // Make the property list from the data
-    CFStringRef errorString = NULL;
-#if (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_11)
-    propertyList = CFPropertyListCreateWithData(kCFAllocatorDefault,
-                                                data,
-                                                kCFPropertyListMutableContainers,
-                                                NULL,
-                                                &error);
-    
-    if (error != NULL)
-    {
-        CFShow(error);
-        CFRelease(error);
-        error = NULL;
-    }
-#else
-    propertyList = CFPropertyListCreateFromXMLData(kCFAllocatorDefault,
-                                                   data,
-                                                   kCFPropertyListMutableContainers,
-                                                   &errorString);
-#endif
-    
-    if (errorString || !CFPropertyListIsValid(propertyList, kCFPropertyListXMLFormat_v1_0) || CFDictionaryGetTypeID() != CFGetTypeID(propertyList)) {
+    CFErrorRef plError = NULL;
+    // CFStringRef errorString = NULL;
+    // propertyList = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, data, kCFPropertyListMutableContainers, &errorString);
+    propertyList = CFPropertyListCreateWithData(kCFAllocatorDefault, data, kCFPropertyListMutableContainers, nil, &plError);
+    if (plError || CFDictionaryGetTypeID() != CFGetTypeID(propertyList) || !CFPropertyListIsValid(propertyList, kCFPropertyListXMLFormat_v1_0)) {
         if (propertyList)
             CFRelease(propertyList);
         return NULL;
@@ -512,8 +495,12 @@ CFDictionaryRef APCreateDictionaryForLicenseFile(CFURLRef path)
 #else
     SInt32 errorCode;
     Boolean status;
-    status = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, path, &data, NULL, NULL, &errorCode);
     
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    status = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, path, &data, NULL, NULL, &errorCode);
+#pragma clang diagnostic pop
+
     if (errorCode || status != true)
         return NULL;
 #endif
