@@ -260,7 +260,7 @@ CFDataRef APCreateHashFromDictionary(CFDictionaryRef dict)
         CFDataAppendBytes(dictData, valueBuffer, CFDataGetLength(valueData));
         CFRelease(valueData);
     }
-    
+    CFRelease(keyArray);
     
     // Hash the data
     hashFunction = SecDigestTransformCreate(kSecDigestSHA1, 0, &error);
